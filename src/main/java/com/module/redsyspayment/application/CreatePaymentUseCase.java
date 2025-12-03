@@ -1,8 +1,11 @@
 package com.module.redsyspayment.application;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
+import java.time.Clock;
 import java.util.UUID;
 
+import com.module.redsyspayment.domain.model.OrderNumber;
 import com.module.redsyspayment.domain.model.Payment;
 import com.module.redsyspayment.domain.model.PaymentId;
 import com.module.redsyspayment.domain.port.PaymentProcessorPort;
@@ -13,6 +16,7 @@ public class CreatePaymentUseCase {
 
     private final PaymentRepository paymentRepository;
     private final PaymentProcessorPort paymentProcessorPort;
+    private final SecureRandom random = new SecureRandom();
 
     public CreatePaymentUseCase(PaymentRepository paymentRepository,
                                 PaymentProcessorPort paymentProcessorPort) {
@@ -21,34 +25,30 @@ public class CreatePaymentUseCase {
     }
 
     public PaymentRedirectData createPayment(BigDecimal amount, String currency) {
-        // 1. Generar Ds_Order (único, numérico, longitud válida)
-        String orderNumber = generateOrderNumber();
 
-        // 2. Crear agregado Payment
-        Payment payment = Payment.builder()
-            .id(new PaymentId(UUID.randomUUID().toString()))
-            .orderNumber(orderNumber)
-            .amount(amount)
-            .currency(currency)
-            .build();
+        // 1. Generar Ds_Order válido para Redsys
+        OrderNumber orderNumber = OrderNumber.generate(random);
 
-        // 3. Persistir en estado PENDING
+        // 2. Crear el agregado
+        Payment payment = Payment.createNew(
+            PaymentId.newRandom(),
+            orderNumber,
+            amount,
+            currency
+        );
+
+        // 3. Persistir en estado inicial
         paymentRepository.save(payment);
 
-        // 4. Pedir al puerto (Redsys) datos para redirigir al TPV
+        // 4. Llamar al puerto para obtener datos de redirección al TPV
         PaymentRedirectData redirectData = paymentProcessorPort.initPayment(payment);
 
-        // 5. Actualizar estado (opcional) a REDIRECTED_TO_TPV
+        // 5. Cambiar estado del agregado
         payment.markRedirectedToTpv();
+
+        // 6. Guardar cambios
         paymentRepository.save(payment);
 
         return redirectData;
-    }
-
-    private String generateOrderNumber() {
-        // Generar 10-12 dígitos numéricos, por ejemplo:
-        long nano = System.nanoTime();
-        String raw = String.valueOf(nano);
-        return raw.substring(raw.length() - 10); // ejemplo simple
     }
 }

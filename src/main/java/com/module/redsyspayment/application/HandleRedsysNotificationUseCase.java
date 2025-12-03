@@ -16,33 +16,36 @@ public class HandleRedsysNotificationUseCase {
         this.paymentRepository = paymentRepository;
     }
 
-    public void handleNotification(String merchantParameters,
-                                   String signature,
-                                   String signatureVersion) {
+    public void handleNotification(String signatureVersion,
+                                   String merchantParameters,
+                                   String signature) {
 
-        // 1. Dejar al adaptador Redsys validar firma y parsear parámetros
+        // 1. Delegar en el adaptador Redsys (puerto) la validación / parseo
         PaymentNotificationResult result = paymentProcessorPort.processNotification(
-                merchantParameters,
-                signature,
-                signatureVersion
+            signatureVersion,
+            merchantParameters,
+            signature
         );
 
         if (!result.validSignature()) {
-            // log de intento fraudulento, no actualizar nada
+            // aquí puedes loggear intento fraudulento
             return;
         }
 
-        // 2. Buscar el Payment por orderNumber (Ds_Order)
+        // 2. Buscar el agregado Payment por Ds_Order
         Payment payment = paymentRepository.findByOrderNumber(result.orderNumber())
-                .orElseThrow(() -> new IllegalStateException("Payment not found for order " + result.orderNumber()));
+                .orElseThrow(() ->
+                        new IllegalStateException("Payment not found for order " + result.orderNumber())
+                );
 
         // 3. Actualizar estado según Ds_Response
         if (result.authorized()) {
-            payment.authorize();
+            payment.authorize(); // método de dominio
         } else {
-            payment.deny();
+            payment.deny(); // método de dominio
         }
 
+        // 4. Persistir cambios
         paymentRepository.save(payment);
     }
 }

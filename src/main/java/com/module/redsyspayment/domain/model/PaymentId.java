@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.util.Objects;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -15,4 +16,8 @@ import java.util.Objects;
 public class PaymentId {
 
     private String value;
+
+      public static PaymentId newRandom() {
+        return new PaymentId(UUID.randomUUID().toString());
+    }
 }

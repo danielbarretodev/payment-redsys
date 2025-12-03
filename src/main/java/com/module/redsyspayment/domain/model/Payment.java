@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
 
 
@@ -48,5 +49,29 @@ public class Payment {
         this.updatedAt = Instant.now();
     }
 
-    // getters generados por Lombok
+    public static Payment createNew(PaymentId id,
+                                OrderNumber orderNumber,
+                                BigDecimal amount,
+                                String currency) {
+        validate(amount, currency);
+        Instant now = Instant.now();
+        return Payment.builder()
+            .id(id)
+            .orderNumber(orderNumber.value())
+            .amount(amount)
+            .currency(currency)
+            .status(PaymentStatus.PENDING)
+            .createdAt(now)
+            .updatedAt(now)
+            .build();
+    }
+
+    private static void validate(BigDecimal amount, String currency) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+        if (currency == null || currency.isEmpty()) {
+            throw new IllegalArgumentException("Currency must be provided");
+        }
+    }
 }

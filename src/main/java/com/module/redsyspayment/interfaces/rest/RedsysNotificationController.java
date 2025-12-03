@@ -1,5 +1,6 @@
 package com.module.redsyspayment.interfaces.rest;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,19 +22,22 @@ public class RedsysNotificationController {
         this.handleRedsysNotificationUseCase = handleRedsysNotificationUseCase;
     }
 
-    @PostMapping("/notify")
-    public ResponseEntity<Void> notify(@RequestParam("Ds_MerchantParameters") String merchantParameters,
-                                       @RequestParam("Ds_Signature") String signature,
-                                       @RequestParam("Ds_SignatureVersion") String signatureVersion) {
-
+    @PostMapping(
+            value = "/notification",
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE
+    )
+    public ResponseEntity<String> paymentNotification(
+            @RequestParam("Ds_SignatureVersion") String signatureVersion,
+            @RequestParam("Ds_MerchantParameters") String merchantParameters,
+            @RequestParam("Ds_Signature") String signature
+    ) {
         handleRedsysNotificationUseCase.handleNotification(
+                signatureVersion,
                 merchantParameters,
-                signature,
-                signatureVersion
+                signature
         );
 
-        // Redsys no necesita un cuerpo especial, normalmente 200 OK
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("OK");
     }
 }
 

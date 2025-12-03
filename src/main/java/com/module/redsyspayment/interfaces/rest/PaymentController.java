@@ -1,9 +1,11 @@
 package com.module.redsyspayment.interfaces.rest;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.module.redsyspayment.application.CreatePaymentUseCase;
@@ -16,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -35,6 +38,7 @@ public class PaymentController {
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @ResponseStatus(HttpStatus.CREATED) 
     @Operation(
         summary = "Create a new payment",
         description = """
@@ -55,7 +59,7 @@ public class PaymentController {
     )
     @ApiResponse(responseCode = "400", description = "Invalid request payload")
     @ApiResponse(responseCode = "500", description = "Internal server error")
-    public PaymentResponse createPayment(@RequestBody PaymentRequest request) {
+    public PaymentResponse createPayment(@Valid @RequestBody PaymentRequest request) {
 
         PaymentRedirectData redirectData = createPaymentUseCase.createPayment(
                 request.amount(),
